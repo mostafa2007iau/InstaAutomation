@@ -26,6 +26,7 @@ class AutomationRuleSerializer(serializers.ModelSerializer):
     class Meta:
         model = AutomationRule
         fields = '__all__'
+        read_only_fields = ('post',)
 
 class TaskLogSerializer(serializers.ModelSerializer):
     class Meta:
