@@ -6,7 +6,7 @@ from django.contrib.auth.models import User
 class InstagramAccount(models.Model):
     # English: The user in our system.
     # Persian: کاربر موجود در سیستم ما.
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='instagram_accounts')
     # English: The Instagram username.
     # Persian: نام کاربری اینستاگرام.
     username = models.CharField(max_length=255, unique=True)
@@ -36,23 +36,29 @@ class MonitoredPost(models.Model):
 # English: Defines a rule for automated replies.
 # Persian: این مدل، یک قانون برای پاسخ‌دهی خودکار را تعریف می‌کند.
 class AutomationRule(models.Model):
-    REPLY_TYPE_CHOICES = [
-        ('comment', 'Comment'),
-        ('direct', 'Direct Message'),
-    ]
-
     # English: The post to which this rule applies.
     # Persian: پستی که این قانون برای آن اعمال می‌شود.
-    post = models.ForeignKey(MonitoredPost, on_delete=models.CASCADE)
+    post = models.ForeignKey(MonitoredPost, on_delete=models.CASCADE, related_name='rules')
     # English: Comma-separated keywords that trigger the automation.
     # Persian: کلمات کلیدی که با کاما از هم جدا شده‌اند و باعث فعال شدن ربات می‌شوند.
     keywords = models.TextField(help_text="Comma-separated keywords")
-    # English: The text to be sent as a reply.
-    # Persian: متنی که به عنوان پاسخ ارسال می‌شود.
-    reply_text = models.TextField()
-    # English: The type of reply (comment or direct message).
-    # Persian: نوع پاسخ (کامنت یا دایرکت).
-    reply_type = models.CharField(max_length=10, choices=REPLY_TYPE_CHOICES)
+
+    # English: Flags to enable different reply types.
+    # Persian: فلگ‌هایی برای فعال‌سازی انواع مختلف پاسخ.
+    send_comment = models.BooleanField(default=False)
+    send_direct = models.BooleanField(default=False)
+
+    # English: The text to be sent as a comment reply. Can be blank.
+    # Persian: متنی که به عنوان پاسخ کامنت ارسال می‌شود. می‌تواند خالی باشد.
+    comment_reply_text = models.TextField(blank=True)
+    # English: The text to be sent as a direct message. Can be blank.
+    # Persian: متنی که به عنوان دایرکت ارسال می‌شود. می‌تواند خالی باشد.
+    direct_reply_text = models.TextField(blank=True)
+
+    # English: Flag to enable AI-generated replies.
+    # Persian: فلگی برای فعال‌سازی پاسخ‌های تولید شده توسط هوش مصنوعی.
+    use_ai_reply = models.BooleanField(default=False)
+
     # English: Whether the rule is currently active.
     # Persian: مشخص می‌کند که آیا این قانون در حال حاضر فعال است یا خیر.
     is_active = models.BooleanField(default=True)

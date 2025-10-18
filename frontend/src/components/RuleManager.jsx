@@ -6,14 +6,11 @@ const RuleManager = ({ post }) => {
     const [rules, setRules] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
-    const [editingRule, setEditingRule] = useState(null); // State for the rule being created or edited
+    const [editingRule, setEditingRule] = useState(null);
 
     const fetchRules = async () => {
         setLoading(true);
         try {
-            // The backend needs to know how to associate the post from the frontend (post.id)
-            // with a MonitoredPost instance. Let's assume we need to create a MonitoredPost first
-            // if it doesn't exist. This logic should be on the backend, but we'll need to send the post details.
             const { data } = await getAutomationRules(post.pk);
             setRules(data);
         } catch (err) {
@@ -33,22 +30,22 @@ const RuleManager = ({ post }) => {
             post_pk: post.pk,
             post_url: `https://www.instagram.com/p/${post.code}/`,
             keywords: editingRule.keywords,
-            reply_text: editingRule.reply_text,
-            reply_type: editingRule.reply_type,
+            send_comment: editingRule.send_comment,
+            send_direct: editingRule.send_direct,
+            comment_reply_text: editingRule.comment_reply_text,
+            direct_reply_text: editingRule.direct_reply_text,
+            use_ai_reply: editingRule.use_ai_reply,
             is_active: editingRule.is_active,
         };
 
         try {
-            if (editingRule.id) { // Existing rule
-                // The update operation in a standard ViewSet might not support custom logic like this easily.
-                // We will assume for now the update will work with the standard serializer.
-                // A better implementation might require a custom update method in the ViewSet.
+            if (editingRule.id) {
                 await updateAutomationRule(editingRule.id, ruleData);
-            } else { // New rule
+            } else {
                 await createAutomationRule(ruleData);
             }
             setEditingRule(null);
-            fetchRules(); // Refresh the list
+            fetchRules();
         } catch (err) {
             setError('خطا در ذخیره قانون.');
         }
@@ -68,58 +65,70 @@ const RuleManager = ({ post }) => {
     const startNewRule = () => {
         setEditingRule({
             keywords: '',
-            reply_text: '',
-            reply_type: 'comment',
-            is_active: true
+            send_comment: true,
+            send_direct: false,
+            comment_reply_text: '',
+            direct_reply_text: '',
+            use_ai_reply: false,
+            is_active: true,
         });
     };
+
+    const renderRuleForm = () => (
+        <form onSubmit={handleSaveRule} style={{ border: '1px solid #eee', padding: '15px', margin: '15px 0', borderRadius: '5px' }}>
+            <h4>{editingRule.id ? 'ویرایش قانون' : 'قانون جدید'}</h4>
+
+            <label>کلمات کلیدی (با کاما جدا کنید):</label>
+            <input type="text" value={editingRule.keywords} onChange={(e) => setEditingRule({ ...editingRule, keywords: e.target.value })} required />
+
+            <label><input type="checkbox" checked={editingRule.use_ai_reply} onChange={(e) => setEditingRule({ ...editingRule, use_ai_reply: e.target.checked })} /> استفاده از پاسخ هوش مصنوعی</label>
+
+            <hr/>
+
+            <label><input type="checkbox" checked={editingRule.send_comment} onChange={(e) => setEditingRule({ ...editingRule, send_comment: e.target.checked })} /> ارسال پاسخ به صورت کامنت</label>
+            <textarea value={editingRule.comment_reply_text} onChange={(e) => setEditingRule({ ...editingRule, comment_reply_text: e.target.value })} placeholder="متن پاسخ کامنت" disabled={editingRule.use_ai_reply || !editingRule.send_comment} />
+
+            <label><input type="checkbox" checked={editingRule.send_direct} onChange={(e) => setEditingRule({ ...editingRule, send_direct: e.target.checked })} /> ارسال پاسخ به صورت دایرکت</label>
+            <textarea value={editingRule.direct_reply_text} onChange={(e) => setEditingRule({ ...editingRule, direct_reply_text: e.target.value })} placeholder="متن پاسخ دایرکت" disabled={editingRule.use_ai_reply || !editingRule.send_direct} />
+
+            <hr/>
+
+            <label><input type="checkbox" checked={editingRule.is_active} onChange={(e) => setEditingRule({ ...editingRule, is_active: e.target.checked })} /> فعال بودن قانون</label>
+
+            <div style={{ marginTop: '10px' }}>
+                <button type="submit">ذخیره</button>
+                <button type="button" onClick={() => setEditingRule(null)}>انصراف</button>
+            </div>
+        </form>
+    );
+
+    const renderRuleDisplay = (rule) => (
+        <div key={rule.id} style={{ border: '1px solid #ddd', padding: '10px', marginBottom: '10px' }}>
+            <p><strong>کلمات کلیدی:</strong> {rule.keywords}</p>
+            {rule.use_ai_reply ? (
+                <p><strong>نوع پاسخ:</strong> هوش مصنوعی</p>
+            ) : (
+                <>
+                    {rule.send_comment && <p><strong>پاسخ کامنت:</strong> {rule.comment_reply_text}</p>}
+                    {rule.send_direct && <p><strong>پاسخ دایرکت:</strong> {rule.direct_reply_text}</p>}
+                </>
+            )}
+            <p><strong>وضعیت:</strong> {rule.is_active ? 'فعال' : 'متوقف'}</p>
+            <button onClick={() => setEditingRule(rule)}>ویرایش</button>
+            <button onClick={() => handleDeleteRule(rule.id)}>حذف</button>
+            <TaskLogViewer ruleId={rule.id} />
+        </div>
+    );
 
     return (
         <div>
             <h3>مدیریت قوانین برای پست: "{post.caption_text.substring(0, 50)}..."</h3>
             <button onClick={startNewRule}>ایجاد قانون جدید</button>
             {error && <p style={{ color: 'red' }}>{error}</p>}
-
-            {editingRule && (
-                <form onSubmit={handleSaveRule} style={{ border: '1px solid #eee', padding: '15px', margin: '15px 0', borderRadius: '5px' }}>
-                    <h4>{editingRule.id ? 'ویرایش قانون' : 'قانون جدید'}</h4>
-                    <label>کلمات کلیدی (با کاما جدا کنید):</label>
-                    <input type="text" value={editingRule.keywords} onChange={(e) => setEditingRule({...editingRule, keywords: e.target.value})} required style={{width: '90%', padding: '8px', margin: '5px 0'}} />
-
-                    <label>متن پاسخ:</label>
-                    <textarea value={editingRule.reply_text} onChange={(e) => setEditingRule({...editingRule, reply_text: e.target.value})} required style={{width: '90%', padding: '8px', margin: '5px 0', height: '80px'}} />
-
-                    <label>نوع پاسخ:</label>
-                    <select value={editingRule.reply_type} onChange={(e) => setEditingRule({...editingRule, reply_type: e.target.value})} style={{padding: '8px', margin: '5px 0'}}>
-                        <option value="comment">کامنت</option>
-                        <option value="direct">دایرکت (پیام خصوصی)</option>
-                    </select>
-
-                    <label>
-                        <input type="checkbox" checked={editingRule.is_active} onChange={(e) => setEditingRule({...editingRule, is_active: e.target.checked})} />
-                        فعال
-                    </label>
-
-                    <div style={{marginTop: '10px'}}>
-                        <button type="submit">ذخیره</button>
-                        <button type="button" onClick={() => setEditingRule(null)}>انصراف</button>
-                    </div>
-                </form>
-            )}
-
+            {editingRule && renderRuleForm()}
             <h4>قوانین موجود</h4>
             {loading ? <p>در حال بارگذاری...</p> : (
-                rules.length > 0 ? rules.map(rule => (
-                    <div key={rule.id} style={{ border: '1px solid #ddd', padding: '10px', marginBottom: '10px' }}>
-                        <p><strong>کلمات کلیدی:</strong> {rule.keywords}</p>
-                        <p><strong>پاسخ:</strong> {rule.reply_text}</p>
-                        <p><strong>نوع:</strong> {rule.reply_type === 'comment' ? 'کامنت' : 'دایرکت'}</p>
-                        <p><strong>وضعیت:</strong> {rule.is_active ? 'فعال' : 'متوقف'}</p>
-                        <button onClick={() => setEditingRule(rule)}>ویرایش</button>
-                        <button onClick={() => handleDeleteRule(rule.id)}>حذف</button>
-                        <TaskLogViewer ruleId={rule.id} />
-                    </div>
-                )) : <p>هیچ قانونی برای این پست تعریف نشده است.</p>
+                rules.length > 0 ? rules.map(renderRuleDisplay) : <p>هیچ قانونی برای این پست تعریف نشده است.</p>
             )}
         </div>
     );

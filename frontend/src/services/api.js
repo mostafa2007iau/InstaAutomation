@@ -22,7 +22,9 @@ export const login = (credentials) => apiClient.post('/token/', credentials);
 export const refreshToken = (refresh) => apiClient.post('/token/refresh/', { refresh });
 
 export const instagramLogin = (credentials) => apiClient.post('/instagram/login/', credentials);
-export const getInstagramPosts = () => apiClient.get('/instagram/posts/');
+export const getInstagramAccounts = () => apiClient.get('/instagram-accounts/');
+export const deleteInstagramAccount = (accountId) => apiClient.delete(`/instagram-accounts/${accountId}/`);
+export const getInstagramPosts = (accountId) => apiClient.get(`/instagram/posts/?account_id=${accountId}`);
 
 export const getAutomationRules = (post_id) => apiClient.get(`/rules/?post_id=${post_id}`);
 export const createAutomationRule = (ruleData) => apiClient.post('/rules/', ruleData);

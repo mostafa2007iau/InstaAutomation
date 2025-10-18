@@ -42,6 +42,9 @@ build/Release
 node_modules/
 jspm_packages/
 
+# Vite cache
+.vite/
+
 # Snowpack dependency directory (https://www.snowpack.dev/)
 web_modules
 

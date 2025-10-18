@@ -30,8 +30,8 @@ class UserRegistrationView(APIView):
             }, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-# English: API view for logging into an Instagram account.
-# Persian: این ویو، اندپوینت API برای ورود به اکانت اینستاگرام را فراهم می‌کند.
+# English: API view for adding a new Instagram account.
+# Persian: این ویو، اندپوینت API برای افزودن یک اکانت جدید اینستاگرام را فراهم می‌کند.
 class InstagramLoginView(APIView):
     def post(self, request):
         username = request.data.get('username')
@@ -43,21 +43,37 @@ class InstagramLoginView(APIView):
         service = InstagramService()
         try:
             session_data = service.login(username, password)
+            # We use update_or_create to prevent duplicate accounts for the same user
             account, created = InstagramAccount.objects.update_or_create(
+                username=username,
                 user=request.user,
-                defaults={'username': username, 'session_data': json.dumps(session_data)}
+                defaults={'session_data': json.dumps(session_data)}
             )
-            return Response({'status': 'success', 'account_id': account.id})
+            return Response(InstagramAccountSerializer(account).data, status=status.HTTP_201_CREATED)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
-# English: API view to fetch the user's Instagram posts.
-# Persian: این ویو، اندپوینت API برای دریافت پست‌های اینستاگرام کاربر را فراهم می‌کند.
+# English: ViewSet for managing connected Instagram accounts.
+# Persian: این ویو، مجموعه‌ای از اندپوینت‌های API برای مدیریت اکانت‌های اینستاگرام متصل شده را فراهم می‌کند.
+class InstagramAccountViewSet(viewsets.ModelViewSet):
+    serializer_class = InstagramAccountSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return self.request.user.instagram_accounts.all()
+
+
+# English: API view to fetch the user's Instagram posts for a specific account.
+# Persian: این ویو، اندپوینت API برای دریافت پست‌های اینستاگرام کاربر برای یک اکانت مشخص را فراهم می‌کند.
 class InstagramPostsView(APIView):
     def get(self, request):
+        account_id = request.query_params.get('account_id')
+        if not account_id:
+            return Response({'error': 'account_id parameter is required.'}, status=status.HTTP_400_BAD_REQUEST)
+
         try:
-            account = InstagramAccount.objects.get(user=request.user)
+            account = InstagramAccount.objects.get(pk=account_id, user=request.user)
             service = InstagramService()
             service.login_with_session(json.loads(account.session_data))
             user_id = service.cl.user_id_from_username(account.username)
@@ -67,7 +83,7 @@ class InstagramPostsView(APIView):
 
             return Response(post_data)
         except InstagramAccount.DoesNotExist:
-            return Response({'error': 'Instagram account not linked.'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': 'Instagram account not found or you do not have permission.'}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 

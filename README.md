@@ -9,13 +9,16 @@ This project is a web application that allows you to automatically reply to comm
 ### Features
 
 -   **User Authentication:** Secure user registration and login using JWT.
--   **Instagram Integration:** Connect your Instagram account securely. Your password is never stored.
--   **Post Management:** View your recent Instagram posts directly in the dashboard.
--   **Custom Automation Rules:** For any post, you can define rules that trigger automated responses.
--   **Keyword-Based Triggers:** Rules are triggered when specific keywords are found in comments.
--   **Multiple Reply Types:** Choose to reply with a public comment or a direct message (DM functionality is currently limited).
+-   **Multi-Account Support:** Connect and manage multiple Instagram accounts under a single user.
+-   **Post Management:** View your recent Instagram posts for each connected account.
+-   **Advanced Automation Rules:**
+    -   Define multiple rules for each post.
+    -   Trigger responses based on keywords.
+    -   Choose to reply via comment, direct message, or both.
+    -   Set custom reply texts for comments and DMs.
+-   **AI-Powered Smart Replies:** Optionally, use AI (powered by OpenAI's GPT models) to generate context-aware, human-like replies.
 -   **Task Management:** Create, edit, delete, and pause your automation rules.
--   **Activity Logs:** View a detailed log of all actions performed by the bot.
+-   **Activity Logs:** View a detailed log of all actions performed by the bot for each rule.
 -   **Rate Limiting:** Smart delays are built-in to prevent your account from being blocked by Instagram.
 
 ### Setup and Installation
@@ -24,11 +27,14 @@ This project is a web application that allows you to automatically reply to comm
 
 -   **Prerequisites:** Python 3.8+, Pip, and Redis.
 -   Navigate to the project root directory.
+-   **Create an environment file:** Create a file named `.env` in the root directory and add your OpenAI API key:
+    ```
+    OPENAI_API_KEY=your_openai_api_key_here
+    ```
 -   **Install dependencies:**
     ```bash
     pip install -r requirements.txt
     ```
-    *(Note: A `requirements.txt` file should be generated from the installed packages. For now, you can install them manually as done in the agent's history)*
 -   **Run database migrations:**
     ```bash
     python manage.py migrate
@@ -65,12 +71,15 @@ This project is a web application that allows you to automatically reply to comm
 ### How to Use
 
 1.  Open your browser and navigate to `http://localhost:5173` (or the port your React app is running on).
-2.  Register a new account or log in if you already have one.
-3.  On the dashboard, you will be prompted to connect your Instagram account. Enter your Instagram username and password.
-4.  Once connected, click the "Fetch Posts" button to see your recent posts.
-5.  Click the "Manage Bot" button on any post to open the rule manager.
-6.  Create new rules by specifying keywords, the reply text, and the reply type.
-7.  The bot will now automatically check for new comments and reply based on your rules.
+2.  Register a new account or log in.
+3.  From the dashboard, click "Add New Account" to connect your first Instagram account. You can add more accounts later.
+4.  Select an account from the dropdown to view its posts.
+5.  Click "Manage Bot" on any post to open the rule manager.
+6.  Click "Create New Rule" and configure your settings:
+    -   Add keywords to trigger the bot.
+    -   Check "Send as Comment" and/or "Send as Direct Message" and provide reply texts.
+    -   Alternatively, check "Generate reply with AI" for smart responses.
+7.  The bot will now automatically process comments based on your active rules.
 
 ---
 
@@ -79,13 +88,16 @@ This project is a web application that allows you to automatically reply to comm
 ### امکانات
 
 -   **احراز هویت کاربران:** ثبت‌نام و ورود امن کاربران با استفاده از JWT.
--   **اتصال به اینستاگرام:** حساب اینستاگرام خود را به صورت امن متصل کنید. رمز عبور شما هرگز ذخیره نمی‌شود.
--   **مدیریت پست‌ها:** پست‌های اخیر اینستاگرام خود را مستقیماً در داشبورد مشاهده کنید.
--   **قوانین اتوماسیون سفارشی:** برای هر پست، می‌توانید قوانینی برای پاسخ‌های خودکار تعریف کنید.
--   **فعال‌سازی بر اساس کلمات کلیدی:** قوانین زمانی فعال می‌شوند که کلمات کلیدی مشخصی در کامنت‌ها پیدا شوند.
--   **انواع پاسخ:** می‌توانید انتخاب کنید که پاسخ به صورت یک کامنت عمومی یا یک پیام دایرکت باشد (قابلیت دایرکت در حال حاضر محدود است).
+-   **پشتیبانی از چند اکانت:** چندین حساب اینستاگرام را تحت یک کاربر واحد متصل و مدیریت کنید.
+-   **مدیریت پست‌ها:** پست‌های اخیر هر حساب متصل شده را مشاهده کنید.
+-   **قوانین اتوماسیون پیشرفته:**
+    -   برای هر پست چندین قانون مختلف تعریف کنید.
+    -   پاسخ‌ها را بر اساس کلمات کلیدی فعال کنید.
+    -   انتخاب کنید که پاسخ از طریق کامنت، دایرکت یا هر دو ارسال شود.
+    -   متن‌های پاسخ سفارشی برای کامنت و دایرکت تنظیم کنید.
+-   **پاسخ‌های هوشمند با هوش مصنوعی:** به صورت اختیاری، از هوش مصنوعی (مدل‌های GPT) برای تولید پاسخ‌های هوشمند و انسانی استفاده کنید.
 -   **مدیریت تسک‌ها:** قوانین اتوماسیون خود را ایجاد، ویرایش، حذف و یا متوقف کنید.
--   **گزارش عملکرد:** گزارش دقیقی از تمام اقدامات انجام شده توسط ربات را مشاهده کنید.
+-   **گزارش عملکرد:** گزارش دقیقی از تمام اقدامات انجام شده توسط ربات برای هر قانون را مشاهده کنید.
 -   **رعایت محدودیت‌ها:** تأخیرهای هوشمند برای جلوگیری از بلاک شدن حساب شما توسط اینستاگرام در سیستم تعبیه شده است.
 
 ### نصب و راه‌اندازی
@@ -94,11 +106,14 @@ This project is a web application that allows you to automatically reply to comm
 
 -   **پیش‌نیازها:** پایتون نسخه ۳.۸ به بالا، Pip و Redis.
 -   به پوشه اصلی پروژه بروید.
+-   **ایجاد فایل محیطی:** یک فایل به نام `.env` در پوشه اصلی پروژه ایجاد کرده و کلید API خود را در آن قرار دهید:
+    ```
+    OPENAI_API_KEY=your_openai_api_key_here
+    ```
 -   **نصب نیازمندی‌ها:**
     ```bash
     pip install -r requirements.txt
     ```
-    *(توجه: فایل `requirements.txt` باید از پکیج‌های نصب شده ساخته شود. در حال حاضر، می‌توانید آن‌ها را به صورت دستی نصب کنید.)*
 -   **اجرای مایگریشن‌های پایگاه داده:**
     ```bash
     python manage.py migrate
@@ -135,9 +150,12 @@ This project is a web application that allows you to automatically reply to comm
 ### نحوه استفاده
 
 ۱. مرورگر خود را باز کرده و به آدرس `http://localhost:5173` (یا پورتی که برنامه React شما روی آن اجرا می‌شود) بروید.
-۲. یک حساب کاربری جدید بسازید یا اگر از قبل حساب دارید وارد شوید.
-۳. در داشبورد، از شما خواسته می‌شود که به حساب اینستاگرام خود متصل شوید. نام کاربری و رمز عبور اینستاگرام خود را وارد کنید.
-۴. پس از اتصال، روی دکمه «دریافت پست‌ها» کلیک کنید تا پست‌های اخیر شما نمایش داده شود.
-۵. روی دکمه «مدیریت ربات» در هر پست کلیک کنید تا مدیریت قوانین باز شود.
-۶. با مشخص کردن کلمات کلیدی، متن پاسخ و نوع پاسخ، قوانین جدیدی ایجاد کنید.
-۷. ربات به طور خودکار کامنت‌های جدید را بررسی کرده و بر اساس قوانین شما پاسخ خواهد داد.
+۲. یک حساب کاربری جدید بسازید یا وارد شوید.
+۳. از داشبورد، روی «افزودن اکانت جدید» کلیک کنید تا اولین حساب اینستاگرام خود را متصل کنید. می‌توانید بعداً اکانت‌های بیشتری اضافه کنید.
+۴. از منوی کشویی یک اکانت را انتخاب کنید تا پست‌های آن را ببینید.
+۵. روی «مدیریت ربات» در هر پست کلیک کنید تا مدیریت قوانین باز شود.
+۶. روی «ایجاد قانون جدید» کلیک کرده و تنظیمات خود را پیکربندی کنید:
+    -   کلمات کلیدی را برای فعال کردن ربات اضافه کنید.
+    -   گزینه «ارسال به صورت کامنت» و/یا «ارسال به صورت دایرکت» را علامت بزنید و متن‌های پاسخ را ارائه دهید.
+    -   به عنوان جایگزین، برای پاسخ‌های هوشمند، گزینه «ایجاد پاسخ توسط هوش مصنوعی» را علامت بزنید.
+۷. ربات به طور خودکار کامنت‌ها را بر اساس قوانین فعال شما پردازش خواهد کرد.
