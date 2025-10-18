@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const apiClient = axios.create({
-  baseURL: 'http://127.0.0.1:8000/api', // Adjust this to your backend's URL
+  baseURL: 'http://127.0.0.1:8001/api', // Adjust this to your backend's URL
 });
 
 apiClient.interceptors.request.use(

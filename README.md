@@ -89,6 +89,7 @@ This guide provides a detailed walkthrough for deploying the application on a fr
     sudo apt install -y redis-server
     sudo systemctl enable redis-server.service
     ```
+    *(Note: If default port `6379` is in use, this guide changes it to `6380`. You may need to edit your `redis.conf` file if you are running Redis outside of Docker.)*
 -   **Create an environment file:** Create a file named `.env` in the project root and add your OpenAI API key:
     ```
     OPENAI_API_KEY=your_openai_api_key_here
@@ -102,7 +103,7 @@ This guide provides a detailed walkthrough for deploying the application on a fr
     python manage.py migrate
     ```
 -   **For development, run the services:**
-    -   Django server: `python manage.py runserver`
+    -   Django server: `python manage.py runserver 8001`
     -   Celery worker (in a new terminal): `celery -A core worker -l info`
     -   Celery beat (in another new terminal): `celery -A core beat -l info`
 
@@ -113,7 +114,7 @@ This guide provides a detailed walkthrough for deploying the application on a fr
     ```bash
     npm install
     ```
--   **For development, run the dev server:** `npm run dev`
+-   **For development, run the dev server:** `npm run dev` (will run on port `5174`)
 -   **For production, build the static files:**
     ```bash
     npm run build
@@ -128,6 +129,19 @@ For a production environment, you should not use the development servers. Instea
 -   **Celery:** Run the Celery worker and beat processes as background services using a process manager like **Systemd**.
 
 Setting up Gunicorn, Nginx, and Systemd is a more advanced topic beyond this guide, but it is the standard way to deploy Django and React applications reliably.
+
+### How to Use
+
+1.  Open your browser and navigate to `http://localhost:5174` (or the port your React app is running on).
+2.  Register a new account or log in.
+3.  From the dashboard, click "Add New Account" to connect your first Instagram account. You can add more accounts later.
+4.  Select an account from the dropdown to view its posts.
+5.  Click "Manage Bot" on any post to open the rule manager.
+6.  Click "Create New Rule" and configure your settings:
+    -   Add keywords to trigger the bot.
+    -   Check "Send as Comment" and/or "Send as Direct Message" and provide reply texts.
+    -   Alternatively, check "Generate reply with AI" for smart responses.
+7.  The bot will now automatically process comments based on your active rules.
 
 ---
 
@@ -216,6 +230,7 @@ Setting up Gunicorn, Nginx, and Systemd is a more advanced topic beyond this gui
     sudo apt install -y redis-server
     sudo systemctl enable redis-server.service
     ```
+    *(توجه: اگر پورت پیش‌فرض `6379` در حال استفاده است، این راهنما آن را به `6380` تغییر می‌دهد. ممکن است لازم باشد فایل `redis.conf` خود را ویرایش کنید اگر Redis را خارج از Docker اجرا می‌کنید.)*
 -   **ایجاد فایل محیطی:** یک فایل به نام `.env` در پوشه اصلی پروژه ایجاد کرده و کلید API خود را در آن قرار دهید:
     ```
     OPENAI_API_KEY=your_openai_api_key_here
@@ -229,7 +244,7 @@ Setting up Gunicorn, Nginx, and Systemd is a more advanced topic beyond this gui
     python manage.py migrate
     ```
 -   **برای محیط توسعه، سرویس‌ها را اجرا کنید:**
-    -   سرور جنگو: `python manage.py runserver`
+    -   سرور جنگو: `python manage.py runserver 8001`
     -   ورکر Celery (در یک ترمینال جدید): `celery -A core worker -l info`
     -   زمان‌بند Celery (در یک ترمینال دیگر): `celery -A core beat -l info`
 
@@ -240,7 +255,7 @@ Setting up Gunicorn, Nginx, and Systemd is a more advanced topic beyond this gui
     ```bash
     npm install
     ```
--   **برای محیط توسعه، سرور را اجرا کنید:** `npm run dev`
+-   **برای محیط توسعه، سرور را اجرا کنید:** `npm run dev` (روی پورت `5174` اجرا خواهد شد)
 -   **برای محیط عملیاتی، فایل‌های استاتیک را بسازید:**
     ```bash
     npm run build
@@ -255,3 +270,16 @@ Setting up Gunicorn, Nginx, and Systemd is a more advanced topic beyond this gui
 -   **Celery:** پردازه‌های ورکر و بیت Celery را به عنوان سرویس‌های پس‌زمینه با استفاده از یک مدیر پردازش مانند **Systemd** اجرا کنید.
 
 راه‌اندازی Gunicorn، Nginx و Systemd یک موضوع پیشرفته‌تر است که خارج از این راهنماست، اما این روش استاندارد برای استقرار قابل اعتماد برنامه‌های Django و React است.
+
+### نحوه استفاده
+
+۱. مرورگر خود را باز کرده و به آدرس `http://localhost:5174` (یا پورتی که برنامه React شما روی آن اجرا می‌شود) بروید.
+۲. یک حساب کاربری جدید بسازید یا وارد شوید.
+۳. از داشبورد، روی «افزودن اکانت جدید» کلیک کنید تا اولین حساب اینستاگرام خود را متصل کنید. می‌توانید بعداً اکانت‌های بیشتری اضافه کنید.
+۴. از منوی کشویی یک اکانت را انتخاب کنید تا پست‌های آن را ببینید.
+۵. روی «مدیریت ربات» در هر پست کلیک کنید تا مدیریت قوانین باز شود.
+۶. روی «ایجاد قانون جدید» کلیک کرده و تنظیمات خود را پیکربندی کنید:
+    -   کلمات کلیدی را برای فعال کردن ربات اضافه کنید.
+    -   گزینه «ارسال به صورت کامنت» و/یا «ارسال به صورت دایرکت» را علامت بزنید و متن‌های پاسخ را ارائه دهید.
+    -   به عنوان جایگزین، برای پاسخ‌های هوشمند، گزینه «ایجاد پاسخ توسط هوش مصنوعی» را علامت بزنید.
+۷. ربات به طور خودکار کامنت‌ها را بر اساس قوانین فعال شما پردازش خواهد کرد.
