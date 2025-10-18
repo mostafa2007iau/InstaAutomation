@@ -1,6 +1,6 @@
 # Instagram Comment Automation Bot
 
-This project is a web application that allows you to automatically reply to comments on your Instagram posts based on keywords. It features a Django backend and a React frontend.
+This project is a web application that allows you to automatically reply to comments on your Instagram posts based on keywords. It features a Django backend, a React frontend, multi-account support, and AI-powered smart replies.
 
 ---
 
@@ -21,17 +21,79 @@ This project is a web application that allows you to automatically reply to comm
 -   **Activity Logs:** View a detailed log of all actions performed by the bot for each rule.
 -   **Rate Limiting:** Smart delays are built-in to prevent your account from being blocked by Instagram.
 
-### Setup and Installation
+### Full Deployment Guide (from Scratch)
 
-**1. Backend Setup (Django)**
+This guide provides a detailed walkthrough for deploying the application on a fresh **Ubuntu 22.04 server**.
 
--   **Prerequisites:** Python 3.8+, Pip, and Redis.
--   Navigate to the project root directory.
--   **Create an environment file:** Create a file named `.env` in the root directory and add your OpenAI API key:
+**1. Server Preparation**
+
+-   **Server Type:** A Virtual Private Server (VPS) with at least 1 CPU core, 1 GB of RAM, and 25 GB of storage is recommended. Providers like DigitalOcean, Linode, or Vultr are good options.
+-   **Initial Server Setup:**
+    -   Connect to your server via SSH: `ssh root@YOUR_SERVER_IP`
+    -   Update your system:
+        ```bash
+        sudo apt update && sudo apt upgrade -y
+        ```
+    -   Install essential build tools and Git:
+        ```bash
+        sudo apt install -y git build-essential libssl-dev zlib1g-dev libbz2-dev \
+        libreadline-dev libsqlite3-dev wget curl llvm libncurses5-dev libncursesw5-dev \
+        xz-utils tk-dev libffi-dev liblzma-dev python3-openssl
+        ```
+
+**2. Install Python & Node.js**
+
+-   **Install `pyenv` for Python version management:**
+    ```bash
+    curl https://pyenv.run | bash
+    ```
+    -   Add `pyenv` to your shell's startup file (e.g., `.bashrc` or `.zshrc`):
+        ```bash
+        echo 'export PYENV_ROOT="$HOME/.pyenv"' >> ~/.bashrc
+        echo 'command -v pyenv >/dev/null || export PATH="$PYENV_ROOT/bin:$PATH"' >> ~/.bashrc
+        echo 'eval "$(pyenv init -)"' >> ~/.bashrc
+        ```
+    -   Reload your shell: `exec "$SHELL"`
+    -   Install Python 3.10 (or a recent version):
+        ```bash
+        pyenv install 3.10.12
+        pyenv global 3.10.12
+        ```
+-   **Install `nvm` for Node.js version management:**
+    ```bash
+    curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.3/install.sh | bash
+    ```
+    -   Reload your shell: `exec "$SHELL"`
+    -   Install the latest LTS version of Node.js:
+        ```bash
+        nvm install --lts
+        ```
+
+**3. Clone & Setup the Project**
+
+-   **Clone the repository:**
+    ```bash
+    git clone <YOUR_REPOSITORY_URL>
+    cd <YOUR_PROJECT_DIRECTORY>
+    ```
+
+**4. Backend Setup (Django)**
+
+-   **Create and activate a virtual environment:**
+    ```bash
+    python -m venv venv
+    source venv/bin/activate
+    ```
+-   **Install Redis (for Celery):**
+    ```bash
+    sudo apt install -y redis-server
+    sudo systemctl enable redis-server.service
+    ```
+-   **Create an environment file:** Create a file named `.env` in the project root and add your OpenAI API key:
     ```
     OPENAI_API_KEY=your_openai_api_key_here
     ```
--   **Install dependencies:**
+-   **Install Python dependencies:**
     ```bash
     pip install -r requirements.txt
     ```
@@ -39,47 +101,33 @@ This project is a web application that allows you to automatically reply to comm
     ```bash
     python manage.py migrate
     ```
--   **Start the Django development server:**
-    ```bash
-    python manage.py runserver
-    ```
--   **Start the Celery worker (in a new terminal):**
-    ```bash
-    celery -A core worker -l info
-    ```
--   **Start the Celery beat scheduler (in a new terminal):**
-    ```bash
-    celery -A core beat -l info
-    ```
+-   **For development, run the services:**
+    -   Django server: `python manage.py runserver`
+    -   Celery worker (in a new terminal): `celery -A core worker -l info`
+    -   Celery beat (in another new terminal): `celery -A core beat -l info`
 
-**2. Frontend Setup (React)**
+**5. Frontend Setup (React)**
 
--   **Prerequisites:** Node.js and npm.
--   Navigate to the `frontend` directory:
-    ```bash
-    cd frontend
-    ```
+-   Navigate to the `frontend` directory: `cd frontend`
 -   **Install dependencies:**
     ```bash
     npm install
     ```
--   **Start the React development server:**
+-   **For development, run the dev server:** `npm run dev`
+-   **For production, build the static files:**
     ```bash
-    npm run dev
+    npm run build
     ```
+    The production-ready files will be in the `frontend/dist` directory.
 
-### How to Use
+**6. Production Deployment (Recommended)**
 
-1.  Open your browser and navigate to `http://localhost:5173` (or the port your React app is running on).
-2.  Register a new account or log in.
-3.  From the dashboard, click "Add New Account" to connect your first Instagram account. You can add more accounts later.
-4.  Select an account from the dropdown to view its posts.
-5.  Click "Manage Bot" on any post to open the rule manager.
-6.  Click "Create New Rule" and configure your settings:
-    -   Add keywords to trigger the bot.
-    -   Check "Send as Comment" and/or "Send as Direct Message" and provide reply texts.
-    -   Alternatively, check "Generate reply with AI" for smart responses.
-7.  The bot will now automatically process comments based on your active rules.
+For a production environment, you should not use the development servers. Instead:
+-   **Backend:** Use **Gunicorn** as an application server and **Nginx** as a reverse proxy.
+-   **Frontend:** Serve the static files from the `frontend/dist` directory using Nginx.
+-   **Celery:** Run the Celery worker and beat processes as background services using a process manager like **Systemd**.
+
+Setting up Gunicorn, Nginx, and Systemd is a more advanced topic beyond this guide, but it is the standard way to deploy Django and React applications reliably.
 
 ---
 
@@ -100,17 +148,79 @@ This project is a web application that allows you to automatically reply to comm
 -   **گزارش عملکرد:** گزارش دقیقی از تمام اقدامات انجام شده توسط ربات برای هر قانون را مشاهده کنید.
 -   **رعایت محدودیت‌ها:** تأخیرهای هوشمند برای جلوگیری از بلاک شدن حساب شما توسط اینستاگرام در سیستم تعبیه شده است.
 
-### نصب و راه‌اندازی
+### راهنمای کامل استقرار (از صفر)
 
-**۱. راه‌اندازی بک‌اند (Django)**
+این راهنما یک توضیح قدم به قدم برای استقرار برنامه روی یک سرور **اوبونتو نسخه ۲۲.۰۴** ارائه می‌دهد.
 
--   **پیش‌نیازها:** پایتون نسخه ۳.۸ به بالا، Pip و Redis.
--   به پوشه اصلی پروژه بروید.
+**۱. آماده‌سازی سرور**
+
+-   **نوع سرور:** یک سرور مجازی (VPS) با حداقل ۱ هسته پردازشی، ۱ گیگابایت رم و ۲۵ گیگابایت حافظه توصیه می‌شود. شرکت‌هایی مانند DigitalOcean، Linode یا Vultr گزینه‌های مناسبی هستند.
+-   **تنظیمات اولیه سرور:**
+    -   از طریق SSH به سرور خود متصل شوید: `ssh root@YOUR_SERVER_IP`
+    -   سیستم خود را به‌روزرسانی کنید:
+        ```bash
+        sudo apt update && sudo apt upgrade -y
+        ```
+    -   ابزارهای ضروری و گیت را نصب کنید:
+        ```bash
+        sudo apt install -y git build-essential libssl-dev zlib1g-dev libbz2-dev \
+        libreadline-dev libsqlite3-dev wget curl llvm libncurses5-dev libncursesw5-dev \
+        xz-utils tk-dev libffi-dev liblzma-dev python3-openssl
+        ```
+
+**۲. نصب پایتون و Node.js**
+
+-   **نصب `pyenv` برای مدیریت نسخه‌های پایتون:**
+    ```bash
+    curl https://pyenv.run | bash
+    ```
+    -   `pyenv` را به فایل استارتاپ شل خود اضافه کنید (مانند `.bashrc` یا `.zshrc`):
+        ```bash
+        echo 'export PYENV_ROOT="$HOME/.pyenv"' >> ~/.bashrc
+        echo 'command -v pyenv >/dev/null || export PATH="$PYENV_ROOT/bin:$PATH"' >> ~/.bashrc
+        echo 'eval "$(pyenv init -)"' >> ~/.bashrc
+        ```
+    -   شل خود را دوباره بارگذاری کنید: `exec "$SHELL"`
+    -   پایتون نسخه ۳.۱۰ (یا یک نسخه جدید) را نصب کنید:
+        ```bash
+        pyenv install 3.10.12
+        pyenv global 3.10.12
+        ```
+-   **نصب `nvm` برای مدیریت نسخه‌های Node.js:**
+    ```bash
+    curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.3/install.sh | bash
+    ```
+    -   شل خود را دوباره بارگذاری کنید: `exec "$SHELL"`
+    -   آخرین نسخه LTS از Node.js را نصب کنید:
+        ```bash
+        nvm install --lts
+        ```
+
+**۳. کلون و راه‌اندازی پروژه**
+
+-   **کلون کردن ریپازیتوری:**
+    ```bash
+    git clone <YOUR_REPOSITORY_URL>
+    cd <YOUR_PROJECT_DIRECTORY>
+    ```
+
+**۴. راه‌اندازی بک‌اند (Django)**
+
+-   **ایجاد و فعال‌سازی یک محیط مجازی:**
+    ```bash
+    python -m venv venv
+    source venv/bin/activate
+    ```
+-   **نصب Redis (برای Celery):**
+    ```bash
+    sudo apt install -y redis-server
+    sudo systemctl enable redis-server.service
+    ```
 -   **ایجاد فایل محیطی:** یک فایل به نام `.env` در پوشه اصلی پروژه ایجاد کرده و کلید API خود را در آن قرار دهید:
     ```
     OPENAI_API_KEY=your_openai_api_key_here
     ```
--   **نصب نیازمندی‌ها:**
+-   **نصب نیازمندی‌های پایتون:**
     ```bash
     pip install -r requirements.txt
     ```
@@ -118,44 +228,30 @@ This project is a web application that allows you to automatically reply to comm
     ```bash
     python manage.py migrate
     ```
--   **اجرای سرور جنگو:**
-    ```bash
-    python manage.py runserver
-    ```
--   **اجرای ورکر Celery (در یک ترمینال جدید):**
-    ```bash
-    celery -A core worker -l info
-    ```
--   **اجرای زمان‌بند Celery (در یک ترمینال جدید):**
-    ```bash
-    celery -A core beat -l info
-    ```
+-   **برای محیط توسعه، سرویس‌ها را اجرا کنید:**
+    -   سرور جنگو: `python manage.py runserver`
+    -   ورکر Celery (در یک ترمینال جدید): `celery -A core worker -l info`
+    -   زمان‌بند Celery (در یک ترمینال دیگر): `celery -A core beat -l info`
 
-**۲. راه‌اندازی فرانت‌اند (React)**
+**۵. راه‌اندازی فرانت‌اند (React)**
 
--   **پیش‌نیازها:** Node.js و npm.
--   به پوشه `frontend` بروید:
-    ```bash
-    cd frontend
-    ```
+-   به پوشه `frontend` بروید: `cd frontend`
 -   **نصب نیازمندی‌ها:**
     ```bash
     npm install
     ```
--   **اجرای سرور React:**
+-   **برای محیط توسعه، سرور را اجرا کنید:** `npm run dev`
+-   **برای محیط عملیاتی، فایل‌های استاتیک را بسازید:**
     ```bash
-    npm run dev
+    npm run build
     ```
+    فایل‌های آماده برای استقرار در پوشه `frontend/dist` قرار خواهند گرفت.
 
-### نحوه استفاده
+**۶. استقرار در محیط عملیاتی (توصیه‌شده)**
 
-۱. مرورگر خود را باز کرده و به آدرس `http://localhost:5173` (یا پورتی که برنامه React شما روی آن اجرا می‌شود) بروید.
-۲. یک حساب کاربری جدید بسازید یا وارد شوید.
-۳. از داشبورد، روی «افزودن اکانت جدید» کلیک کنید تا اولین حساب اینستاگرام خود را متصل کنید. می‌توانید بعداً اکانت‌های بیشتری اضافه کنید.
-۴. از منوی کشویی یک اکانت را انتخاب کنید تا پست‌های آن را ببینید.
-۵. روی «مدیریت ربات» در هر پست کلیک کنید تا مدیریت قوانین باز شود.
-۶. روی «ایجاد قانون جدید» کلیک کرده و تنظیمات خود را پیکربندی کنید:
-    -   کلمات کلیدی را برای فعال کردن ربات اضافه کنید.
-    -   گزینه «ارسال به صورت کامنت» و/یا «ارسال به صورت دایرکت» را علامت بزنید و متن‌های پاسخ را ارائه دهید.
-    -   به عنوان جایگزین، برای پاسخ‌های هوشمند، گزینه «ایجاد پاسخ توسط هوش مصنوعی» را علامت بزنید.
-۷. ربات به طور خودکار کامنت‌ها را بر اساس قوانین فعال شما پردازش خواهد کرد.
+برای یک محیط عملیاتی، نباید از سرورهای توسعه استفاده کنید. به جای آن:
+-   **بک‌اند:** از **Gunicorn** به عنوان وب سرور برنامه و از **Nginx** به عنوان پراکسی معکوس استفاده کنید.
+-   **فرانت‌اند:** فایل‌های استاتیک ساخته شده در پوشه `frontend/dist` را با استفاده از Nginx سرو کنید.
+-   **Celery:** پردازه‌های ورکر و بیت Celery را به عنوان سرویس‌های پس‌زمینه با استفاده از یک مدیر پردازش مانند **Systemd** اجرا کنید.
+
+راه‌اندازی Gunicorn، Nginx و Systemd یک موضوع پیشرفته‌تر است که خارج از این راهنماست، اما این روش استاندارد برای استقرار قابل اعتماد برنامه‌های Django و React است.
