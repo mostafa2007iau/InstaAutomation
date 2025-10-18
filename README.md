@@ -30,10 +30,7 @@ This guide provides a detailed walkthrough for deploying the application on a fr
 -   **Server Type:** A Virtual Private Server (VPS) with at least 1 CPU core, 1 GB of RAM, and 25 GB of storage is recommended. Providers like DigitalOcean, Linode, or Vultr are good options.
 -   **Initial Server Setup:**
     -   Connect to your server via SSH: `ssh root@YOUR_SERVER_IP`
-    -   Update your system:
-        ```bash
-        sudo apt update && sudo apt upgrade -y
-        ```
+    -   Update your system: `sudo apt update && sudo apt upgrade -y`
     -   Install essential build tools and Git:
         ```bash
         sudo apt install -y git build-essential libssl-dev zlib1g-dev libbz2-dev \
@@ -47,101 +44,97 @@ This guide provides a detailed walkthrough for deploying the application on a fr
     ```bash
     curl https://pyenv.run | bash
     ```
-    -   Add `pyenv` to your shell's startup file (e.g., `.bashrc` or `.zshrc`):
+    -   Add `pyenv` to your shell's startup file (e.g., `.bashrc`):
         ```bash
         echo 'export PYENV_ROOT="$HOME/.pyenv"' >> ~/.bashrc
         echo 'command -v pyenv >/dev/null || export PATH="$PYENV_ROOT/bin:$PATH"' >> ~/.bashrc
         echo 'eval "$(pyenv init -)"' >> ~/.bashrc
         ```
     -   Reload your shell: `exec "$SHELL"`
-    -   Install Python 3.10 (or a recent version):
-        ```bash
-        pyenv install 3.10.12
-        pyenv global 3.10.12
-        ```
+    -   Install Python 3.10: `pyenv install 3.10.12 && pyenv global 3.10.12`
 -   **Install `nvm` for Node.js version management:**
     ```bash
     curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.3/install.sh | bash
     ```
     -   Reload your shell: `exec "$SHELL"`
-    -   Install the latest LTS version of Node.js:
-        ```bash
-        nvm install --lts
-        ```
+    -   Install Node.js LTS: `nvm install --lts`
 
 **3. Clone & Setup the Project**
 
--   **Clone the repository:**
-    ```bash
-    git clone <YOUR_REPOSITORY_URL>
-    cd <YOUR_PROJECT_DIRECTORY>
-    ```
+-   Clone the repository: `git clone <YOUR_REPOSITORY_URL>`
+-   Navigate into the project: `cd <YOUR_PROJECT_DIRECTORY>`
 
 **4. Backend Setup (Django)**
 
--   **Create and activate a virtual environment:**
-    ```bash
-    python -m venv venv
-    source venv/bin/activate
-    ```
--   **Install Redis (for Celery):**
-    ```bash
-    sudo apt install -y redis-server
-    sudo systemctl enable redis-server.service
-    ```
-    *(Note: If default port `6379` is in use, this guide changes it to `6380`. You may need to edit your `redis.conf` file if you are running Redis outside of Docker.)*
--   **Create an environment file:** Create a file named `.env` in the project root and add your OpenAI API key:
+-   **Create virtual environment:** `python -m venv venv && source venv/bin/activate`
+-   **Install Redis:** `sudo apt install -y redis-server && sudo systemctl enable redis-server.service`
+    *(Note: The app is configured to use Redis on port `6380`. If you need to change this, edit `redis.conf` and the URL in `core/settings.py`.)*
+-   **Create `.env` file:** Create a `.env` file in the project root:
     ```
     OPENAI_API_KEY=your_openai_api_key_here
     ```
--   **Install Python dependencies:**
-    ```bash
-    pip install -r requirements.txt
-    ```
--   **Run database migrations:**
-    ```bash
-    python manage.py migrate
-    ```
--   **For development, run the services:**
-    -   Django server: `python manage.py runserver 8001`
-    -   Celery worker (in a new terminal): `celery -A core worker -l info`
-    -   Celery beat (in another new terminal): `celery -A core beat -l info`
+-   **Install dependencies:** `pip install -r requirements.txt`
+-   **Run database migrations:** `python manage.py migrate`
+-   **Run Development Server:** `python manage.py runserver 8001`
+    *(For production, use Gunicorn and run Celery processes as background services with Systemd.)*
 
-**5. Frontend Setup (React)**
+**5. Frontend Production Deployment with Nginx**
 
--   Navigate to the `frontend` directory: `cd frontend`
--   **Install dependencies:**
+This section details how to serve the React frontend and proxy API requests to the Django backend using Nginx.
+
+-   **Navigate to the frontend directory and build the project:**
     ```bash
+    cd frontend
     npm install
-    ```
--   **For development, run the dev server:** `npm run dev` (will run on port `5174`)
--   **For production, build the static files:**
-    ```bash
     npm run build
+    cd ..
     ```
-    The production-ready files will be in the `frontend/dist` directory.
+-   **Install Nginx:**
+    ```bash
+    sudo apt install -y nginx
+    ```
+-   **Create an Nginx configuration file:**
+    ```bash
+    sudo nano /etc/nginx/sites-available/instagram_bot
+    ```
+-   **Paste the following configuration** into the file. Replace `your_domain_or_server_ip` with your server's public IP address or your domain name.
+    ```nginx
+    server {
+        listen 80;
+        server_name your_domain_or_server_ip;
 
-**6. Production Deployment (Recommended)**
+        # Serve React App
+        location / {
+            root /path/to/your_project/frontend/dist;
+            try_files $uri /index.html;
+        }
 
-For a production environment, you should not use the development servers. Instead:
--   **Backend:** Use **Gunicorn** as an application server and **Nginx** as a reverse proxy.
--   **Frontend:** Serve the static files from the `frontend/dist` directory using Nginx.
--   **Celery:** Run the Celery worker and beat processes as background services using a process manager like **Systemd**.
+        # Proxy API requests to the Django backend
+        location /api/ {
+            proxy_pass http://127.0.0.1:8001;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+    }
+    ```
+    *Important: Make sure to replace `/path/to/your_project/` with the actual absolute path to your project directory on the server.*
+-   **Enable the site and test the configuration:**
+    ```bash
+    sudo ln -s /etc/nginx/sites-available/instagram_bot /etc/nginx/sites-enabled/
+    sudo nginx -t
+    ```
+-   **If the test is successful, restart Nginx:**
+    ```bash
+    sudo systemctl restart nginx
+    ```
+-   **Adjust the Firewall:**
+    ```bash
+    sudo ufw allow 'Nginx Full'
+    ```
 
-Setting up Gunicorn, Nginx, and Systemd is a more advanced topic beyond this guide, but it is the standard way to deploy Django and React applications reliably.
-
-### How to Use
-
-1.  Open your browser and navigate to `http://localhost:5174` (or the port your React app is running on).
-2.  Register a new account or log in.
-3.  From the dashboard, click "Add New Account" to connect your first Instagram account. You can add more accounts later.
-4.  Select an account from the dropdown to view its posts.
-5.  Click "Manage Bot" on any post to open the rule manager.
-6.  Click "Create New Rule" and configure your settings:
-    -   Add keywords to trigger the bot.
-    -   Check "Send as Comment" and/or "Send as Direct Message" and provide reply texts.
-    -   Alternatively, check "Generate reply with AI" for smart responses.
-7.  The bot will now automatically process comments based on your active rules.
+Your application should now be accessible at `http://your_domain_or_server_ip`.
 
 ---
 
@@ -168,13 +161,10 @@ Setting up Gunicorn, Nginx, and Systemd is a more advanced topic beyond this gui
 
 **۱. آماده‌سازی سرور**
 
--   **نوع سرور:** یک سرور مجازی (VPS) با حداقل ۱ هسته پردازشی، ۱ گیگابایت رم و ۲۵ گیگابایت حافظه توصیه می‌شود. شرکت‌هایی مانند DigitalOcean، Linode یا Vultr گزینه‌های مناسبی هستند.
+-   **نوع سرور:** یک سرور مجازی (VPS) با حداقل ۱ هسته پردازشی، ۱ گیگابایت رم و ۲۵ گیگابایت حافظه توصیه می‌شود.
 -   **تنظیمات اولیه سرور:**
     -   از طریق SSH به سرور خود متصل شوید: `ssh root@YOUR_SERVER_IP`
-    -   سیستم خود را به‌روزرسانی کنید:
-        ```bash
-        sudo apt update && sudo apt upgrade -y
-        ```
+    -   سیستم خود را به‌روزرسانی کنید: `sudo apt update && sudo apt upgrade -y`
     -   ابزارهای ضروری و گیت را نصب کنید:
         ```bash
         sudo apt install -y git build-essential libssl-dev zlib1g-dev libbz2-dev \
@@ -188,98 +178,94 @@ Setting up Gunicorn, Nginx, and Systemd is a more advanced topic beyond this gui
     ```bash
     curl https://pyenv.run | bash
     ```
-    -   `pyenv` را به فایل استارتاپ شل خود اضافه کنید (مانند `.bashrc` یا `.zshrc`):
+    -   `pyenv` را به فایل استارتاپ شل خود اضافه کنید (مانند `.bashrc`):
         ```bash
         echo 'export PYENV_ROOT="$HOME/.pyenv"' >> ~/.bashrc
         echo 'command -v pyenv >/dev/null || export PATH="$PYENV_ROOT/bin:$PATH"' >> ~/.bashrc
         echo 'eval "$(pyenv init -)"' >> ~/.bashrc
         ```
     -   شل خود را دوباره بارگذاری کنید: `exec "$SHELL"`
-    -   پایتون نسخه ۳.۱۰ (یا یک نسخه جدید) را نصب کنید:
-        ```bash
-        pyenv install 3.10.12
-        pyenv global 3.10.12
-        ```
+    -   پایتون نسخه ۳.۱۰ را نصب کنید: `pyenv install 3.10.12 && pyenv global 3.10.12`
 -   **نصب `nvm` برای مدیریت نسخه‌های Node.js:**
     ```bash
     curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.3/install.sh | bash
     ```
     -   شل خود را دوباره بارگذاری کنید: `exec "$SHELL"`
-    -   آخرین نسخه LTS از Node.js را نصب کنید:
-        ```bash
-        nvm install --lts
-        ```
+    -   آخرین نسخه LTS از Node.js را نصب کنید: `nvm install --lts`
 
 **۳. کلون و راه‌اندازی پروژه**
 
--   **کلون کردن ریپازیتوری:**
-    ```bash
-    git clone <YOUR_REPOSITORY_URL>
-    cd <YOUR_PROJECT_DIRECTORY>
-    ```
+-   **کلون کردن ریپازیتوری:** `git clone <YOUR_REPOSITORY_URL>`
+-   **ورود به پوشه پروژه:** `cd <YOUR_PROJECT_DIRECTORY>`
 
 **۴. راه‌اندازی بک‌اند (Django)**
 
--   **ایجاد و فعال‌سازی یک محیط مجازی:**
-    ```bash
-    python -m venv venv
-    source venv/bin/activate
-    ```
--   **نصب Redis (برای Celery):**
-    ```bash
-    sudo apt install -y redis-server
-    sudo systemctl enable redis-server.service
-    ```
-    *(توجه: اگر پورت پیش‌فرض `6379` در حال استفاده است، این راهنما آن را به `6380` تغییر می‌دهد. ممکن است لازم باشد فایل `redis.conf` خود را ویرایش کنید اگر Redis را خارج از Docker اجرا می‌کنید.)*
--   **ایجاد فایل محیطی:** یک فایل به نام `.env` در پوشه اصلی پروژه ایجاد کرده و کلید API خود را در آن قرار دهید:
+-   **ایجاد محیط مجازی:** `python -m venv venv && source venv/bin/activate`
+-   **نصب Redis:** `sudo apt install -y redis-server && sudo systemctl enable redis-server.service`
+    *(توجه: برنامه برای استفاده از Redis روی پورت `6380` پیکربندی شده است. اگر نیاز به تغییر دارید، فایل `redis.conf` و آدرس در `core/settings.py` را ویرایش کنید.)*
+-   **ایجاد فایل `.env`:** یک فایل `.env` در ریشه پروژه بسازید:
     ```
     OPENAI_API_KEY=your_openai_api_key_here
     ```
--   **نصب نیازمندی‌های پایتون:**
-    ```bash
-    pip install -r requirements.txt
-    ```
--   **اجرای مایگریشن‌های پایگاه داده:**
-    ```bash
-    python manage.py migrate
-    ```
--   **برای محیط توسعه، سرویس‌ها را اجرا کنید:**
-    -   سرور جنگو: `python manage.py runserver 8001`
-    -   ورکر Celery (در یک ترمینال جدید): `celery -A core worker -l info`
-    -   زمان‌بند Celery (در یک ترمینال دیگر): `celery -A core beat -l info`
+-   **نصب نیازمندی‌ها:** `pip install -r requirements.txt`
+-   **اجرای مایگریشن‌ها:** `python manage.py migrate`
+-   **اجرای سرور توسعه:** `python manage.py runserver 8001`
+    *(برای محیط عملیاتی، از Gunicorn استفاده کرده و پردازه‌های Celery را با Systemd به عنوان سرویس پس‌زمینه اجرا کنید.)*
 
-**۵. راه‌اندازی فرانت‌اند (React)**
+**۵. استقرار فرانت‌اند در محیط عملیاتی با Nginx**
 
--   به پوشه `frontend` بروید: `cd frontend`
--   **نصب نیازمندی‌ها:**
+این بخش نحوه سرو کردن فرانت‌اند React و هدایت درخواست‌های API به بک‌اند جنگو را با استفاده از Nginx توضیح می‌دهد.
+
+-   **به پوشه فرانت‌اند رفته و پروژه را بیلد کنید:**
     ```bash
+    cd frontend
     npm install
-    ```
--   **برای محیط توسعه، سرور را اجرا کنید:** `npm run dev` (روی پورت `5174` اجرا خواهد شد)
--   **برای محیط عملیاتی، فایل‌های استاتیک را بسازید:**
-    ```bash
     npm run build
+    cd ..
     ```
-    فایل‌های آماده برای استقرار در پوشه `frontend/dist` قرار خواهند گرفت.
+-   **نصب Nginx:**
+    ```bash
+    sudo apt install -y nginx
+    ```
+-   **ایجاد فایل پیکربندی برای Nginx:**
+    ```bash
+    sudo nano /etc/nginx/sites-available/instagram_bot
+    ```
+-   **پیکربندی زیر را در فایل کپی کنید.** حتماً `your_domain_or_server_ip` را با آدرس IP عمومی سرور یا دامنه خود جایگزین کنید.
+    ```nginx
+    server {
+        listen 80;
+        server_name your_domain_or_server_ip;
 
-**۶. استقرار در محیط عملیاتی (توصیه‌شده)**
+        # سرو کردن برنامه React
+        location / {
+            root /path/to/your_project/frontend/dist;
+            try_files $uri /index.html;
+        }
 
-برای یک محیط عملیاتی، نباید از سرورهای توسعه استفاده کنید. به جای آن:
--   **بک‌اند:** از **Gunicorn** به عنوان وب سرور برنامه و از **Nginx** به عنوان پراکسی معکوس استفاده کنید.
--   **فرانت‌اند:** فایل‌های استاتیک ساخته شده در پوشه `frontend/dist` را با استفاده از Nginx سرو کنید.
--   **Celery:** پردازه‌های ورکر و بیت Celery را به عنوان سرویس‌های پس‌زمینه با استفاده از یک مدیر پردازش مانند **Systemd** اجرا کنید.
+        # پراکسی کردن درخواست‌های API به بک‌اند جنگو
+        location /api/ {
+            proxy_pass http://127.0.0.1:8001;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+    }
+    ```
+    *مهم: حتماً `/path/to/your_project/` را با مسیر مطلق واقعی پروژه خود روی سرور جایگزین کنید.*
+-   **فعال‌سازی سایت و تست پیکربندی:**
+    ```bash
+    sudo ln -s /etc/nginx/sites-available/instagram_bot /etc/nginx/sites-enabled/
+    sudo nginx -t
+    ```
+-   **اگر تست موفقیت‌آمیز بود، Nginx را ری‌استارت کنید:**
+    ```bash
+    sudo systemctl restart nginx
+    ```
+-   **تنظیم فایروال:**
+    ```bash
+    sudo ufw allow 'Nginx Full'
+    ```
 
-راه‌اندازی Gunicorn، Nginx و Systemd یک موضوع پیشرفته‌تر است که خارج از این راهنماست، اما این روش استاندارد برای استقرار قابل اعتماد برنامه‌های Django و React است.
-
-### نحوه استفاده
-
-۱. مرورگر خود را باز کرده و به آدرس `http://localhost:5174` (یا پورتی که برنامه React شما روی آن اجرا می‌شود) بروید.
-۲. یک حساب کاربری جدید بسازید یا وارد شوید.
-۳. از داشبورد، روی «افزودن اکانت جدید» کلیک کنید تا اولین حساب اینستاگرام خود را متصل کنید. می‌توانید بعداً اکانت‌های بیشتری اضافه کنید.
-۴. از منوی کشویی یک اکانت را انتخاب کنید تا پست‌های آن را ببینید.
-۵. روی «مدیریت ربات» در هر پست کلیک کنید تا مدیریت قوانین باز شود.
-۶. روی «ایجاد قانون جدید» کلیک کرده و تنظیمات خود را پیکربندی کنید:
-    -   کلمات کلیدی را برای فعال کردن ربات اضافه کنید.
-    -   گزینه «ارسال به صورت کامنت» و/یا «ارسال به صورت دایرکت» را علامت بزنید و متن‌های پاسخ را ارائه دهید.
-    -   به عنوان جایگزین، برای پاسخ‌های هوشمند، گزینه «ایجاد پاسخ توسط هوش مصنوعی» را علامت بزنید.
-۷. ربات به طور خودکار کامنت‌ها را بر اساس قوانین فعال شما پردازش خواهد کرد.
+اکنون برنامه شما باید از طریق آدرس `http://your_domain_or_server_ip` قابل دسترس باشد.
