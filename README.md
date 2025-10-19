@@ -137,17 +137,22 @@ This guide provides a detailed walkthrough for deploying the application on a fr
         ```nginx
         server {
             listen 80;
-            server_name your_domain_or_ip;
+            server_name your_domain_or_ip; # e.g., example.com or your server's IP
 
-            location = /favicon.ico { access_log off; log_not_found off; }
+            # Path for Django static files
             location /static/ {
-                root <path_to_project>;
+                root <path_to_project>; # e.g., /home/user/instagram_bot
             }
+
+            # Path for React frontend build
             location / {
                 root <path_to_project>/frontend/dist;
                 try_files $uri /index.html;
             }
+
+            # Proxy API requests to the Gunicorn socket
             location /api/ {
+                include proxy_params;
                 proxy_pass http://unix:<path_to_project>/gunicorn.sock;
             }
         }
@@ -157,6 +162,18 @@ This guide provides a detailed walkthrough for deploying the application on a fr
 -   **Adjust Firewall:** `sudo ufw allow 'Nginx Full'`
 
 Your application is now live and running with a production-ready setup.
+
+### Troubleshooting
+
+-   **500 Internal Server Error:** This is a generic server-side error. The most common causes are:
+    1.  **Incorrect Paths:** The paths in your Nginx or Systemd service files (`<path_to_project>`) do not match the actual absolute path of your project directory. Double-check all paths.
+    2.  **Permissions Issues:** Nginx (running as `www-data`) or your Gunicorn user may not have permission to read or execute files in your project directory.
+        -   Check Nginx error logs for "permission denied" errors: `sudo tail -f /var/log/nginx/error.log`
+        -   Ensure your user is in the `www-data` group: `sudo usermod -aG www-data <your_user>`
+        -   Set appropriate permissions: `sudo chmod -R 775 <path_to_project>`
+    3.  **Gunicorn Socket Not Found:** The Nginx proxy cannot connect to the Gunicorn socket. Check the Gunicorn service status: `sudo systemctl status gunicorn`. Make sure it's active and running without errors.
+
+-   **API requests are failing:** If the frontend loads but API calls fail, check the Nginx access and error logs. Also, ensure the Gunicorn service is running correctly and that the API proxy in your Nginx config is pointing to the correct socket or address.
 
 ---
 
@@ -293,17 +310,22 @@ Your application is now live and running with a production-ready setup.
         ```nginx
         server {
             listen 80;
-            server_name your_domain_or_ip;
+            server_name your_domain_or_ip; # برای مثال: example.com یا IP سرور شما
 
-            location = /favicon.ico { access_log off; log_not_found off; }
+            # مسیر فایل‌های استاتیک جنگو
             location /static/ {
-                root <path_to_project>;
+                root <path_to_project>; # برای مثال: /home/user/instagram_bot
             }
+
+            # مسیر فایل‌های بیلد شده فرانت‌اند React
             location / {
                 root <path_to_project>/frontend/dist;
                 try_files $uri /index.html;
             }
+
+            # پراکسی کردن درخواست‌های API به سوکت Gunicorn
             location /api/ {
+                include proxy_params;
                 proxy_pass http://unix:<path_to_project>/gunicorn.sock;
             }
         }
@@ -313,3 +335,15 @@ Your application is now live and running with a production-ready setup.
 -   **تنظیم فایروال:** `sudo ufw allow 'Nginx Full'`
 
 اکنون برنامه شما به صورت کامل و پایدار روی سرور در حال اجرا است.
+
+### عیب‌یابی (Troubleshooting)
+
+-   **خطای 500 Internal Server Error:** این یک خطای عمومی سمت سرور است. دلایل رایج آن عبارتند از:
+    1.  **مسیرهای نادرست:** مسیرهای (`<path_to_project>`) در فایل‌های سرویس Nginx یا Systemd با مسیر مطلق واقعی پروژه شما مطابقت ندارند. تمام مسیرها را دوباره بررسی کنید.
+    2.  **مشکلات سطح دسترسی (Permissions):** کاربر Nginx (`www-data`) یا کاربر Gunicorn شما ممکن است اجازه خواندن یا اجرای فایل‌های پروژه را نداشته باشد.
+        -   برای خطاهای "permission denied"، لاگ خطای Nginx را بررسی کنید: `sudo tail -f /var/log/nginx/error.log`
+        -   مطمئن شوید کاربر شما عضو گروه `www-data` است: `sudo usermod -aG www-data <your_user>`
+        -   سطوح دسترسی مناسب را تنظیم کنید: `sudo chmod -R 775 <path_to_project>`
+    3.  **پیدا نشدن سوکت Gunicorn:** پراکسی Nginx نمی‌تواند به سوکت Gunicorn متصل شود. وضعیت سرویس Gunicorn را بررسی کنید: `sudo systemctl status gunicorn`. مطمئن شوید که سرویس فعال و بدون خطا در حال اجراست.
+
+-   **درخواست‌های API با شکست مواجه می‌شوند:** اگر فرانت‌اند بارگذاری می‌شود اما فراخوانی‌های API با خطا مواجه می‌شوند، لاگ‌های دسترسی و خطای Nginx را بررسی کنید. همچنین، مطمئن شوید که سرویس Gunicorn به درستی در حال اجراست و پراکسی API در کانفیگ Nginx شما به سوکت یا آدرس صحیح اشاره می‌کند.
