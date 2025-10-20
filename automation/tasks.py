@@ -23,7 +23,7 @@ def process_automation_rules():
     for rule in active_rules:
         try:
             account = rule.post.account
-            service = InstagramService()
+            service = InstagramService(proxy=account.proxy)
             service.login_with_session(json.loads(account.session_data))
 
             comments = service.cl.media_comments(rule.post.post_id)

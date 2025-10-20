@@ -2,8 +2,10 @@ from instagrapi import Client
 from instagrapi.exceptions import LoginRequired
 
 class InstagramService:
-    def __init__(self):
+    def __init__(self, proxy=None):
         self.cl = Client()
+        if proxy:
+            self.cl.set_proxy(proxy)
 
     def login(self, username, password):
         """
@@ -16,10 +18,12 @@ class InstagramService:
     def login_with_session(self, session_data):
         """
         Logs in to Instagram using session data.
+        Returns the username if successful.
         """
         self.cl.set_settings(session_data)
         # The following line is to check if the session is valid
         self.cl.get_timeline_feed()
+        return self.cl.user_info(self.cl.user_id).username
 
     def get_user_posts(self, user_id, amount=10):
         """

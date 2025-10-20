@@ -9,6 +9,8 @@ This project is a web application that allows you to automatically reply to comm
 ### Features
 
 -   **User Authentication:** Secure user registration and login using JWT.
+-   **Flexible Instagram Login:** Connect your accounts using traditional username/password or by providing session details for enhanced security.
+-   **Proxy Support:** Configure a unique proxy for each connected Instagram account to minimize the risk of blocks and improve connection stability.
 -   **Multi-Account Support:** Connect and manage multiple Instagram accounts under a single user.
 -   **Post Management:** View your recent Instagram posts for each connected account.
 -   **Advanced Automation Rules:**
@@ -163,6 +165,26 @@ This guide provides a detailed walkthrough for deploying the application on a fr
 
 Your application is now live and running with a production-ready setup.
 
+### How to Use
+
+1.  Open your browser and navigate to your server's IP or domain.
+2.  Register a new account or log in.
+3.  From the dashboard, click "Add New Account". You will have two options:
+    -   **Login with Password:** Enter your Instagram username and password.
+    -   **Login with Session:** A more secure method. Enter your `sessionid`, `csrftoken`, and `ds_user_id` values, which you can find in your browser's cookies for instagram.com.
+    -   **Proxy (Optional):** For either method, you can provide a proxy URL (e.g., `http://user:pass@host:port`) to enhance security.
+4.  Once connected, your account will appear in the dropdown. You can add more accounts.
+5.  Select an account from the dropdown to view its posts.
+6.  Click "Manage Bot" on any post to open the rule manager.
+7.  Click "Create New Rule" and configure your settings.
+8.  The bot will now automatically process comments based on your active rules, using the proxy you provided for that account if any.
+
+### Cross-Platform Application (.NET MAUI)
+
+For developers interested in building a native cross-platform (iOS, Android, Windows, macOS) application, a complete architectural blueprint is available. This document provides a detailed technical guide, including project structure, recommended libraries, and code samples.
+
+**[View the .NET MAUI Architectural Blueprint](./MAUI_ARCHITECTURE.md)**
+
 ### Troubleshooting
 
 -   **500 Internal Server Error:** This is a generic server-side error. The most common causes are:
@@ -182,6 +204,8 @@ Your application is now live and running with a production-ready setup.
 ### امکانات
 
 -   **احراز هویت کاربران:** ثبت‌نام و ورود امن کاربران با استفاده از JWT.
+-   **ورود انعطاف‌پذیر به اینستاگرام:** اکانت‌های خود را با استفاده از نام کاربری/رمز عبور یا از طریق جزئیات نشست (Session) برای امنیت بیشتر متصل کنید.
+-   **پشتیبانی از پراکسی:** برای هر اکانت اینستاگرام یک پراکسی منحصربه‌فرد تنظیم کنید تا ریسک بلاک شدن به حداقل برسد و پایداری اتصال افزایش یابد.
 -   **پشتیبانی از چند اکانت:** چندین حساب اینستاگرام را تحت یک کاربر واحد متصل و مدیریت کنید.
 -   **مدیریت پست‌ها:** پست‌های اخیر هر حساب متصل شده را مشاهده کنید.
 -   **قوانین اتوماسیون پیشرفته:**
@@ -335,6 +359,26 @@ Your application is now live and running with a production-ready setup.
 -   **تنظیم فایروال:** `sudo ufw allow 'Nginx Full'`
 
 اکنون برنامه شما به صورت کامل و پایدار روی سرور در حال اجرا است.
+
+### نحوه استفاده
+
+۱. مرورگر خود را باز کرده و به آدرس IP یا دامنه سرور خود بروید.
+۲. یک حساب کاربری جدید بسازید یا وارد شوید.
+۳. از داشبورد، روی «افزودن اکانت جدید» کلیک کنید. شما دو گزینه خواهید داشت:
+    -   **ورود با رمز عبور:** نام کاربری و رمز عبور اینستاگرام خود را وارد کنید.
+    -   **ورود با نشست (Session):** یک روش امن‌تر. مقادیر `sessionid`، `csrftoken` و `ds_user_id` را که می‌توانید از کوکی‌های مرورگر خود در سایت instagram.com پیدا کنید، وارد نمایید.
+    -   **پراکسی (اختیاری):** برای هر دو روش، می‌توانید یک آدرس پراکسی (مانند `http://user:pass@host:port`) برای افزایش امنیت ارائه دهید.
+۴. پس از اتصال، اکانت شما در منوی کشویی ظاهر می‌شود. می‌توانید اکانت‌های بیشتری اضافه کنید.
+۵. از منوی کشویی یک اکانت را انتخاب کنید تا پست‌های آن را ببینید.
+۶. روی «مدیریت ربات» در هر پست کلیک کنید تا مدیریت قوانین باز شود.
+۷. روی «ایجاد قانون جدید» کلیک کرده و تنظیمات خود را پیکربندی کنید.
+۸. ربات به طور خودکار کامنت‌ها را بر اساس قوانین فعال شما پردازش خواهد کرد و در صورت وجود، از پراکسی که برای آن اکانت ارائه داده‌اید استفاده می‌کند.
+
+### اپلیکیشن چند پلتفرمی (.NET MAUI)
+
+برای توسعه‌دهندگانی که علاقه‌مند به ساخت یک اپلیکیشن نیتیو چند پلتفرمی (iOS، اندروید، ویندوز، macOS) هستند، یک بلوپرینت معماری کامل آماده شده است. این سند یک راهنمای فنی دقیق شامل ساختار پروژه، کتابخانه‌های پیشنهادی و نمونه کدها را ارائه می‌دهد.
+
+**[مشاهده بلوپرینت معماری .NET MAUI](./MAUI_ARCHITECTURE.md)**
 
 ### عیب‌یابی (Troubleshooting)
 

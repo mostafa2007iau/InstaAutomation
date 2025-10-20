@@ -3,6 +3,7 @@ from rest_framework.routers import DefaultRouter
 from .views import (
     UserRegistrationView,
     InstagramLoginView,
+    InstagramSessionLoginView,
     InstagramAccountViewSet,
     InstagramPostsView,
     AutomationRuleViewSet,
@@ -17,6 +18,7 @@ router.register(r'instagram-accounts', InstagramAccountViewSet, basename='instag
 urlpatterns = [
     path('register/', UserRegistrationView.as_view(), name='register'),
     path('instagram/login/', InstagramLoginView.as_view(), name='instagram-login'),
+    path('instagram/login-session/', InstagramSessionLoginView.as_view(), name='instagram-login-session'),
     path('instagram/posts/', InstagramPostsView.as_view(), name='instagram-posts'),
     path('', include(router.urls)),
 ]

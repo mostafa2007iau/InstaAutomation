@@ -13,6 +13,9 @@ class InstagramAccount(models.Model):
     # English: Stores the JSON data of the instagrapi session.
     # Persian: داده‌های مربوط به نشست (session) در کتابخانه instagrapi را به صورت JSON ذخیره می‌کند.
     session_data = models.TextField()
+    # English: Optional proxy URL for this account's requests.
+    # Persian: آدرس پراکسی اختیاری برای درخواست‌های این اکانت.
+    proxy = models.CharField(max_length=255, blank=True, null=True, help_text="e.g., http://user:pass@host:port")
 
     def __str__(self):
         return self.username

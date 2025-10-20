@@ -36,22 +36,52 @@ class InstagramLoginView(APIView):
     def post(self, request):
         username = request.data.get('username')
         password = request.data.get('password')
+        proxy = request.data.get('proxy')
 
         if not username or not password:
             return Response({'error': 'Username and password are required.'}, status=status.HTTP_400_BAD_REQUEST)
 
-        service = InstagramService()
+        service = InstagramService(proxy=proxy)
         try:
             session_data = service.login(username, password)
-            # We use update_or_create to prevent duplicate accounts for the same user
             account, created = InstagramAccount.objects.update_or_create(
                 username=username,
                 user=request.user,
-                defaults={'session_data': json.dumps(session_data)}
+                defaults={'session_data': json.dumps(session_data), 'proxy': proxy}
             )
             return Response(InstagramAccountSerializer(account).data, status=status.HTTP_201_CREATED)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class InstagramSessionLoginView(APIView):
+    def post(self, request):
+        sessionid = request.data.get('sessionid')
+        csrftoken = request.data.get('csrftoken')
+        user_id = request.data.get('user_id')
+        proxy = request.data.get('proxy')
+
+        if not all([sessionid, csrftoken, user_id]):
+            return Response({'error': 'sessionid, csrftoken, and user_id are required.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        session_data = {
+            "uuids": {}, "mid": "", "ig_u_rur": "", "ig_www_claim": "", "authorization_data": {},
+            "cookies": { "csrftoken": csrftoken, "sessionid": sessionid, "ds_user_id": user_id },
+            "last_login": None, "device_settings": {}, "user_agent": "", "country": "US",
+            "country_code": 1, "locale": "en_US", "timezone_offset": 0
+        }
+
+        service = InstagramService(proxy=proxy)
+        try:
+            username = service.login_with_session(session_data)
+            account, created = InstagramAccount.objects.update_or_create(
+                username=username,
+                user=request.user,
+                defaults={'session_data': json.dumps(session_data), 'proxy': proxy}
+            )
+            return Response(InstagramAccountSerializer(account).data, status=status.HTTP_201_CREATED)
+        except Exception as e:
+            return Response({'error': f"Login failed. Please check your session details. Error: {e}"}, status=status.HTTP_400_BAD_REQUEST)
 
 
 # English: ViewSet for managing connected Instagram accounts.
@@ -74,7 +104,7 @@ class InstagramPostsView(APIView):
 
         try:
             account = InstagramAccount.objects.get(pk=account_id, user=request.user)
-            service = InstagramService()
+            service = InstagramService(proxy=account.proxy)
             service.login_with_session(json.loads(account.session_data))
             user_id = service.cl.user_id_from_username(account.username)
             posts = service.get_user_posts(user_id)
